@@ -1,6 +1,6 @@
-const launches = new Map();
+const Launch = require("./launches.mongo");
 
-let latestFlightNumber = 100;
+const launches = new Map();
 
 const launch = {
   flightNumber: 100,
@@ -13,40 +13,60 @@ const launch = {
   success: true,
 };
 
-launches.set(launch.flightNumber, launch);
+saveLaunch(launch);
 
-function exitsLaunchWithId(launchId) {
-  return launches.has(launchId);
+async function exitsLaunchWithId(launchId) {
+  return await Launch.findOne({ flightNumber: launchId });
 }
 
-function getAllLaunches() {
-  return Array.from(launches.values());
+async function getLastestFlightNumber() {
+  const lastestlaunch = await Launch.findOne().sort("-flightNumber");
+  if (!lastestlaunch) {
+    return 1000;
+  }
+  return lastestlaunch.flightNumber;
 }
 
-function addNewLaunch(launch) {
-  latestFlightNumber++;
-  launches.set(
-    latestFlightNumber,
-    Object.assign(launch, {
-      success: true,
-      upcoming: true,
-      customers: ["Labbaek Ratul", "NASA"],
-      flightNumber: latestFlightNumber,
-    })
+async function getAllLaunches() {
+  return await Launch.find({}, { _id: 0, __v: 0 });
+}
+
+async function saveLaunch(launch) {
+  await Launch.findOneAndUpdate(
+    {
+      flightNumber: launch.flightNumber,
+    },
+    launch,
+    { upsert: true }
   );
 }
 
-function abortLaunchById(launchId) {
-  console.log("this is id");
-  const aborted = launches.get(launchId);
-  aborted.upcoming = false;
-  aborted.success = false;
-  return aborted;
+async function scheduleNewLaunch(launch) {
+  const newFlightNumber = (await getLastestFlightNumber()) + 1;
+  const newLaunch = Object.assign(launch, {
+    success: true,
+    upcoming: true,
+    customers: ["Labbaek Ratul", "NASA"],
+    flightNumber: newFlightNumber,
+  });
+  await saveLaunch(newLaunch);
+}
+
+async function abortLaunchById(launchId) {
+  return await Launch.updateOne(
+    {
+      flightNumber: launchId,
+    },
+    {
+      upcoming: false,
+      success: false,
+    }
+  );
 }
 
 module.exports = {
   exitsLaunchWithId,
   getAllLaunches,
-  addNewLaunch,
+  scheduleNewLaunch,
   abortLaunchById,
 };
