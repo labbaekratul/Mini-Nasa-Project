@@ -32,13 +32,13 @@ async function getAllLaunches() {
 }
 
 async function saveLaunch(launch) {
-  await Launch.findOneAndUpdate(
-    {
-      flightNumber: launch.flightNumber,
-    },
-    launch,
-    { upsert: true }
-  );
+  // await Launch.findOneAndUpdate(
+  //   {
+  //     flightNumber: launch.flightNumber,
+  //   },
+  //   launch,
+  //   { upsert: true }
+  // );
 }
 
 async function scheduleNewLaunch(launch) {
